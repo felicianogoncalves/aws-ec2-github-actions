@@ -1,0 +1,30 @@
+# Nome do workflow que aparece no GitHub Actions
+name: Deploy EC2
+
+# Define o gatilho (quando o workflow é executado)
+on:
+  workflow_dispatch:  # Permite executar manualmente o workflow na interface do GitHub
+
+# Define os jobs (tarefas) a serem executadas
+jobs:
+  deploy:  # Nome do job (podes escolher outro nome se quiseres)
+    runs-on: ubuntu-latest  # Usa um runner do GitHub com Ubuntu mais recente
+
+    steps:
+      # Passo 1: Configura as credenciais da AWS
+      - name: Configure AWS credentials  # Nome descritivo deste passo
+        uses: aws-actions/configure-aws-credentials@v4  # Action oficial da AWS para autenticação
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}        # Chave de acesso da AWS (guardada como segredo no GitHub)
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Chave secreta (também guardada como segredo)
+          aws-region: eu-west-2  # Região da AWS onde a instância será criada (Londres)
+
+      # Passo 2: Lança a instância EC2 com a AWS CLI
+      - name: Launch EC2 Instance (Ubuntu 24.04 LTS)  # Nome descritivo do passo
+        run: |
+          # Comando da AWS CLI para criar a instância
+          aws ec2 run-instances \
+            --image-id ami-0a0ff88d0f3f85a14 \        # AMI do Ubuntu 24.04 LTS (válida apenas para eu-west-2)
+            --instance-type t2.micro \                 # Tipo de instância (t2.micro é gratuito na camada gratuita)
+            --key-name tua-chave \                     # Nome da chave SSH já criada na AWS (para acesso posterior por SSH)
+            --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  # Etiqueta "Name=GitHub-EC2" para identificação fácil
