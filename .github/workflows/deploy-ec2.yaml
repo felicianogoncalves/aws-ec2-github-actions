@@ -26,7 +26,6 @@ jobs:
       #   • Tag: Name = GitHub-EC2
       - name: Launch EC2 Instance (Ubuntu 24.04 LTS)  # Nome descritivo do passo
         run: |
-          # Comando da AWS CLI para criar a instância
           aws ec2 run-instances \
             --image-id ami-00f46ccd1cbfb363e \
             --count 1 \
