@@ -1,36 +1,77 @@
-# Nome do workflow que aparece no GitHub Actions
+# Nome do workflow (aparece na aba Actions do GitHub)
 name: Deploy EC2
 
-# Define o gatilho (quando o workflow é executado)
 on:
-  workflow_dispatch:  # Permite executar manualmente o workflow na interface do GitHub
-   inputs:
-      instance-name:
-        description: "Nome da instância EC2"
-        required: true
-        default: "GitHub-EC2"
+  # workflow_dispatch → permite executar manualmente no GitHub (Run workflow)
+  workflow_dispatch:
+    inputs:
+      instance-name:                # Input que aparece na interface
+        description: "Nome da instância EC2"   # Texto explicativo
+        required: true              # Campo obrigatório
+        default: "GitHub-EC2"       # Valor por defeito se não escreveres nada
 
-# Define os jobs (tarefas) a serem executadas
 jobs:
-  deploy:  # Nome do job (podes escolher outro nome se quiseres)
-    runs-on: ubuntu-latest  # Usa um runner do GitHub com Ubuntu mais recente
+  deploy:
+    # Runner que vai executar os passos (máquina virtual Ubuntu fornecida pelo GitHub)
+    runs-on: ubuntu-latest
 
     steps:
-      # Passo 1: Configura as credenciais da AWS
-      - name: Configure AWS credentials  # Nome descritivo deste passo
-        uses: aws-actions/configure-aws-credentials@v4  # Action oficial da AWS para autenticação
+      # 1. Configurar credenciais AWS
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}        # Chave de acesso da AWS (guardada como segredo no GitHub)
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Chave secreta (também guardada como segredo)
-          aws-region: us-west-2  # Região da AWS onde a instância será criada 
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}       # Chave guardada em Secrets
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Chave secreta guardada em Secrets
+          aws-region: us-west-2                                     # Região AWS onde vais criar a instância
 
-      # Passo 2: Lança a instância EC2 com a AWS CLI
-      #   • Imagem: Ubuntu 24.04 LTS (ami-0a0ff88d0f3f85a14)
-      #   • Tipo: t2.micro (gratuito na camada gratuita)
-      #   • Chave SSH: ec2-key (deve existir na AWS)
-      #   • Tag: Name = GitHub-EC2
-      - name: Launch EC2 Instance (Ubuntu 24.04 LTS)  # Nome descritivo do passo
+      # 2. Fazer checkout do repositório (para ter acesso ao site/index.html)
+      - name: Checkout repository
+        uses: actions/checkout@v4   # Baixa o código do repositório para o runner
+
+      # 3. Criar instância EC2 com Apache instalado
+      - name: Launch EC2 Instance
+        id: ec2
         run: |
-          aws ec2 run-instances \
+          # Cria uma instância EC2 e guarda o ID
+          INSTANCE_ID=$(aws ec2 run-instances \
             --image-id ami-00f46ccd1cbfb363e --count 1 --instance-type t3.micro --key-name ec2-key --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${{ github.event.inputs.instance-name }}}]"
+            --user-data '#!/bin/bash
+              # Script que corre automaticamente na instância ao arrancar
+              sudo apt-get update -y
+              sudo apt-get install -y apache2    # Instala Apache
+              sudo systemctl enable apache2      # Ativa Apache para arrancar sempre
+              sudo systemctl start apache2'      # Inicia Apache imediatamente
+            --query 'Instances[0].InstanceId' \  # Extrai apenas o Instance ID
+            --output text)
 
+          # Guarda o Instance ID numa variável de ambiente para usar depois
+          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+
+      # 4. Esperar até a instância estar running e obter IP público
+      - name: Get Public IP
+        run: |
+          # Espera até a instância estar no estado "running"
+          aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+
+          # Obtém o IP público da instância
+          PUBLIC_IP=$(aws ec2 describe-instances \
+            --instance-ids $INSTANCE_ID \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+
+          # Guarda o IP numa variável de ambiente
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+          echo "Instância pronta em IP: $PUBLIC_IP"
+
+      # 5. Copiar ficheiro HTML para a instância
+      - name: Upload index.html to EC2
+        run: |
+          # Cria o ficheiro da chave privada a partir do secret guardado no GitHub
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
+          chmod 600 ec2-key.pem   # Ajusta permissões (só leitura pelo dono)
+
+          # Copia o ficheiro site/index.html do repositório para a instância (via SCP)
+          scp -o StrictHostKeyChecking=no -i ec2-key.pem site/index.html ubuntu@$PUBLIC_IP:/tmp/index.html
+
+          # Move o ficheiro para a pasta do Apache (/var/www/html)
+          ssh -o StrictHostKeyChecking=no -i ec2-key.pem ubuntu@$PUBLIC_IP "sudo mv /tmp/index.html /var/www/html/index.html"
