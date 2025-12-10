@@ -26,5 +26,5 @@ jobs:
           aws ec2 run-instances \
             --image-id ami-0a0ff88d0f3f85a14 \        # AMI do Ubuntu 24.04 LTS (válida apenas para eu-west-2)
             --instance-type t2.micro \                 # Tipo de instância (t2.micro é gratuito na camada gratuita)
-            --key-name tua-chave \                     # Nome da chave SSH já criada na AWS (para acesso posterior por SSH)
+            --key-name ec2-key \                     # Nome da chave SSH já criada na AWS (para acesso posterior por SSH)
             --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  # Etiqueta "Name=GitHub-EC2" para identificação fácil
