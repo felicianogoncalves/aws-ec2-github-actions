@@ -17,7 +17,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}        # Chave de acesso da AWS (guardada como segredo no GitHub)
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # Chave secreta (também guardada como segredo)
-          aws-region: eu-west-2  # Região da AWS onde a instância será criada (Londres)
+          aws-region: us-west-2  # Região da AWS onde a instância será criada (Londres)
 
       # Passo 2: Lança a instância EC2 com a AWS CLI
       #   • Imagem: Ubuntu 24.04 LTS (ami-0a0ff88d0f3f85a14)
@@ -28,7 +28,7 @@ jobs:
         run: |
           # Comando da AWS CLI para criar a instância
           aws ec2 run-instances \
-            --image-id ami-0a0ff88d0f3f85a14         
-            --instance-type t2.micro                  
+            --image-id ami-00f46ccd1cbfb363e       
+            --instance-type t2.nano                  
             --key-name ec2-key                     
             --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  
