@@ -26,9 +26,5 @@ jobs:
       #   • Tag: Name = GitHub-EC2
       - name: Launch EC2 Instance (Ubuntu 24.04 LTS)  # Nome descritivo do passo
         run: |
-          aws ec2 run-instances 
-            --image-id ami-00f46ccd1cbfb363e 
-            --count 1 
-            --instance-type t3.micro               
-            --key-name ec2-key                  
-            --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  
+          aws ec2 run-instances \
+            --image-id ami-00f46ccd1cbfb363e --count 1 --instance-type t3.micro --key-name ec2-key --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  
