@@ -20,11 +20,15 @@ jobs:
           aws-region: eu-west-2  # Região da AWS onde a instância será criada (Londres)
 
       # Passo 2: Lança a instância EC2 com a AWS CLI
+      #   • Imagem: Ubuntu 24.04 LTS (ami-0a0ff88d0f3f85a14)
+      #   • Tipo: t2.micro (gratuito na camada gratuita)
+      #   • Chave SSH: ec2-key (deve existir na AWS)
+      #   • Tag: Name = GitHub-EC2
       - name: Launch EC2 Instance (Ubuntu 24.04 LTS)  # Nome descritivo do passo
         run: |
           # Comando da AWS CLI para criar a instância
           aws ec2 run-instances \
-            --image-id ami-0a0ff88d0f3f85a14 \        # AMI do Ubuntu 24.04 LTS (válida apenas para eu-west-2)
-            --instance-type t2.micro \                 # Tipo de instância (t2.micro é gratuito na camada gratuita)
-            --key-name ec2-key \                     # Nome da chave SSH já criada na AWS (para acesso posterior por SSH)
-            --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  # Etiqueta "Name=GitHub-EC2" para identificação fácil
+            --image-id ami-0a0ff88d0f3f85a14 \        
+            --instance-type t2.micro \                 
+            --key-name ec2-key \                     
+            --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  
