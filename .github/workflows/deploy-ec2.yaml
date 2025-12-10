@@ -28,7 +28,7 @@ jobs:
         run: |
           # Comando da AWS CLI para criar a instância
           aws ec2 run-instances \
-            --image-id ami-00f46ccd1cbfb363e       
-            --instance-type t2.nano                  
-            --key-name ec2-key                     
+            --image-id ami-00f46ccd1cbfb363e \    
+            --instance-type t2.micro \              
+            --key-name ec2-key \                 
             --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  
