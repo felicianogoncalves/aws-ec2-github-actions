@@ -4,6 +4,11 @@ name: Deploy EC2
 # Define o gatilho (quando o workflow é executado)
 on:
   workflow_dispatch:  # Permite executar manualmente o workflow na interface do GitHub
+   inputs:
+      instance-name:
+        description: "Nome da instância EC2"
+        required: true
+        default: "GitHub-EC2"
 
 # Define os jobs (tarefas) a serem executadas
 jobs:
@@ -27,4 +32,5 @@ jobs:
       - name: Launch EC2 Instance (Ubuntu 24.04 LTS)  # Nome descritivo do passo
         run: |
           aws ec2 run-instances \
-            --image-id ami-00f46ccd1cbfb363e --count 1 --instance-type t3.micro --key-name ec2-key --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=GitHub-EC2}]'  
+            --image-id ami-00f46ccd1cbfb363e --count 1 --instance-type t3.micro --key-name ec2-key --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${{ github.event.inputs.instance-name }}}]"
+
