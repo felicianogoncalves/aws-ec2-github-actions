@@ -27,7 +27,7 @@ jobs:
         run: |
           az group create --name GitHub-RG --location westeurope
 
-      # Passo 3: Criar VM Linux (Ubuntu)
+      # Passo 3: Criar VM Linux (Ubuntu) azure
       - name: Criar VM no Azure
         run: |
           az vm create \
